@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Data-Analyst Telegram Bot — TDS P1 Q5
+Data-Analyst Telegram Bot — TDS P1 Q5 (webhook mode, for Render's free
+Web Service tier — Background Workers aren't free on Render)
 
-Listens for Telegram messages, asks an LLM (via aipipe.org) to work out the
-answer, and replies with exactly one JSON object:
+Listens for Telegram messages via webhook, asks an LLM (via aipipe.org) to
+work out the answer, and replies with exactly one JSON object:
 
     {"answer": <shape the question asks for>, "log_url": "<public run.jsonl URL>"}
 
@@ -24,12 +25,22 @@ Optional:
                           for the current list of available model names
     GITHUB_LOG_PATH      path of the log file inside the repo (default run.jsonl)
     GITHUB_BRANCH        defaults to the repo's default branch
+    WEBHOOK_URL          public base URL Telegram should call (e.g.
+                         https://your-service.onrender.com). On Render this
+                         is auto-detected from RENDER_EXTERNAL_URL — only
+                         set this yourself on a non-Render host.
+    PORT                 port to listen on — Render sets this automatically
 
 Log pushes go through the GitHub Contents API (not the git CLI), so this
 works on any host without a configured git client or SSH key — only a
 plain HTTPS token is needed.
+
+Requires the "webhooks" extra: pip install "python-telegram-bot[webhooks]"
+(already in requirements.txt) — this pulls in tornado, which PTB's
+run_webhook() needs.
 """
 import base64
+import hashlib
 import json
 import os
 import time
@@ -50,6 +61,19 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPO = os.environ.get("GITHUB_REPO")
 GITHUB_LOG_PATH = os.environ.get("GITHUB_LOG_PATH", "run.jsonl")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH")
+
+# Render sets PORT and RENDER_EXTERNAL_URL automatically for Web Services.
+PORT = int(os.environ.get("PORT", 10000))
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL")
+if not WEBHOOK_URL:
+    raise SystemExit(
+        "No WEBHOOK_URL / RENDER_EXTERNAL_URL found. On Render this is set "
+        "automatically for Web Services — if you're on a different host, "
+        "set WEBHOOK_URL yourself to your service's public https:// URL."
+    )
+# Path is derived from the bot token (not the token itself) so it doesn't
+# show up verbatim in host access logs.
+WEBHOOK_PATH = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode()).hexdigest()[:32]
 
 client = OpenAI(base_url="https://aipipe.org/openai/v1", api_key=AIPIPE_TOKEN)
 
@@ -177,8 +201,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 def main() -> None:
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print(f"Bot is running with model={AIPIPE_MODEL}... (Ctrl+C to stop)")
-    app.run_polling()
+    webhook_url = f"{WEBHOOK_URL.rstrip('/')}/{WEBHOOK_PATH}"
+    print(f"Bot running with model={AIPIPE_MODEL}, webhook={webhook_url}, port={PORT}")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=WEBHOOK_PATH,
+        webhook_url=webhook_url,
+    )
 
 
 if __name__ == "__main__":
