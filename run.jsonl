@@ -8,3 +8,5 @@
 {"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": {\"state\": \"Assam\"}, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785407509.2259765}
 {"type": "incoming", "chat_id": 8993545637, "text": "Reply with ONLY this JSON: {\"answer\": <15% of 200>}", "timestamp": 1785407534.3034105}
 {"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": 30, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785407543.448398}
+{"type": "incoming", "chat_id": 8993545637, "text": "Which is the largest state of india? Reply with ONLY a JSON object like {\"state\": \"<state name>\"}", "timestamp": 1785412465.4111812}
+{"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": {\"state\": \"Rajasthan\"}, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785412478.5508754}
