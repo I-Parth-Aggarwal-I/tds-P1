@@ -63,14 +63,10 @@ GITHUB_LOG_PATH = os.environ.get("GITHUB_LOG_PATH", "run.jsonl")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH")
 
 # Render sets PORT and RENDER_EXTERNAL_URL automatically for Web Services.
+# Locally, neither is set, so the bot falls back to polling — no tunnel needed
+# to test on your own machine.
 PORT = int(os.environ.get("PORT", 10000))
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL")
-if not WEBHOOK_URL:
-    raise SystemExit(
-        "No WEBHOOK_URL / RENDER_EXTERNAL_URL found. On Render this is set "
-        "automatically for Web Services — if you're on a different host, "
-        "set WEBHOOK_URL yourself to your service's public https:// URL."
-    )
 # Path is derived from the bot token (not the token itself) so it doesn't
 # show up verbatim in host access logs.
 WEBHOOK_PATH = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode()).hexdigest()[:32]
@@ -110,6 +106,9 @@ def _github_api(method: str, url: str, payload: dict | None = None) -> dict:
     req = urllib.request.Request(url, data=data, method=method, headers={
         "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
+        # GitHub's API rejects any request without a User-Agent with a 403 —
+        # urllib doesn't set one by default, so this must be explicit.
+        "User-Agent": "tds-p1-telegram-bot",
     })
     with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read())
@@ -147,6 +146,7 @@ def maybe_push_log() -> None:
 
     try:
         _github_api("PUT", api_url, payload)
+        print(f"[log] pushed run.jsonl to {GITHUB_REPO} ({len(content_b64)} b64 chars)")
     except Exception as e:
         print(f"[warn] could not push log via GitHub API: {e}")
 
@@ -201,14 +201,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 def main() -> None:
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    webhook_url = f"{WEBHOOK_URL.rstrip('/')}/{WEBHOOK_PATH}"
-    print(f"Bot running with model={AIPIPE_MODEL}, webhook={webhook_url}, port={PORT}")
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=WEBHOOK_PATH,
-        webhook_url=webhook_url,
-    )
+
+    if WEBHOOK_URL:
+        webhook_url = f"{WEBHOOK_URL.rstrip('/')}/{WEBHOOK_PATH}"
+        print(f"Bot running with model={AIPIPE_MODEL}, webhook={webhook_url}, port={PORT}")
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=WEBHOOK_PATH,
+            webhook_url=webhook_url,
+        )
+    else:
+        print(f"Bot running with model={AIPIPE_MODEL} via polling "
+              f"(no WEBHOOK_URL/RENDER_EXTERNAL_URL set — local/dev mode). Ctrl+C to stop")
+        app.run_polling()
 
 
 if __name__ == "__main__":
