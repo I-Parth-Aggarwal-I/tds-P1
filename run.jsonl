@@ -12,5 +12,5 @@
 {"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": {\"state\": \"Rajasthan\"}, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785412478.5508754}
 {"type": "incoming", "chat_id": 8993545637, "text": "Which is the largest state of india? Reply with ONLY a JSON object like {\"state\": \"<state name>\"}", "timestamp": 1785412574.462586}
 {"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": {\"state\": \"Rajasthan\"}, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785412587.465353}
-{"type": "incoming", "chat_id": 8993545637, "text": "Who is the prime minister of india", "timestamp": 1785412842.6047857}
-{"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": \"Narendra Modi\", \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785412854.8091333}
+{"type": "incoming", "chat_id": 8993545637, "text": "Which is the largest state of india? Reply with ONLY a JSON object like {\"state\": \"<state name>\"}", "timestamp": 1785963049.2969046}
+{"type": "outgoing", "chat_id": 8993545637, "text": "{\"answer\": null, \"log_url\": \"https://raw.githubusercontent.com/I-Parth-Aggarwal-I/tds-P1/main/run.jsonl\"}", "timestamp": 1785963056.6070056}
